@@ -7,5 +7,5 @@ View the notebook online: https://rlskoeser.github.io/undate-in-action/
 To compile notebook to static html + web assembly:
 
 ```sh
-marimo export --mode edit html-wasm undate-in-action.py -o docs
+marimo export html-wasm undate-in-action.py -o docs --mode edit
 ```
