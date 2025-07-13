@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.14.10"
-app = marimo.App(width="medium")
+app = marimo.App(width="medium", app_title="Undate in Action")
 
 
 @app.cell
@@ -172,6 +172,110 @@ def _(easter1916, mo, november, november7, november7_some_year, year2k):
     - `november7` in `november` ? {november7 in november}
     - `easter1916` in `year2k` ? {easter1916 in year2k}
     - `november7_some_year` in `year2k` ? {november7_some_year in year2k}
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(
+        r"""
+    ## What else can `Undate` do?
+
+    In the last set of examples, the values were all integers and parts of the date were either known or unknown.  But what if you know part of a date?
+
+    You can initialize `Undate` with strings and use `X` to indcate unknown values.
+    """
+    )
+    return
+
+
+@app.cell
+def _(Undate, mo):
+    someyear_1900s = Undate("19XX", label="1900s")
+    late2022 = Undate(2022, "1X", label="late 2022")
+
+    output2 = []
+
+    for example_date2 in [someyear_1900s, late2022]:
+        output2.append(f"""
+    ### {example_date2.label}: {example_date2}
+    - Date precision: {example_date2.precision}
+    - Duration in days: {max(example_date2.duration().days)}
+    """)
+
+    mo.md("---".join(output2))
+    return late2022, someyear_1900s
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""If you try that with `datetime.date` you get another `TypeError`.""")
+    return
+
+
+@app.cell
+def _(datetime):
+    try:
+        datetime.date("19XX", 1, 1)
+    except TypeError as err:
+        print(err)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    ## Uncertain durations
+
+    If you were paying close attention, you might have noticed I used the `max()` function the last time I output the duration.
+
+    The most recent version of `undate` (v0.5) includes code for uncertain tim deltas.
+    """
+    )
+    return
+
+
+@app.cell
+def _(late2022, mo, someyear_1900s):
+    mo.md(f"""
+    ### {someyear_1900s.label} : {someyear_1900s}
+    - duration: `{someyear_1900s.duration()}`
+    - duration in days: `{someyear_1900s.duration().days}`
+
+    ### {late2022.label} : {late2022}
+    - duration: `{late2022.duration()}`
+    - duration in days: `{late2022.duration().days}`
+
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Even without precise information, we can still do some useful comparisons. 
+
+    February of an unknown year is still shorter than October, November, or December.
+    """
+    )
+    return
+
+
+@app.cell
+def _(Undate, late2022, mo):
+    some_february = Undate(month=2, label="February of some year")
+    some_february.duration() < late2022.duration()
+
+    mo.md(f"""### {some_february.label} : {some_february}
+    - duration: `{some_february.duration()}`
+    - duration in days: `{some_february.duration().days}`
+
+    Is February of an unknown year shorter than an uncertain month 1X? (October, November, or December)
+
+    `some_february.duration() < late2022.duration() = { some_february.duration() < late2022.duration() }`
     """)
     return
 
