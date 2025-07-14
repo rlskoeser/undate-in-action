@@ -15,7 +15,20 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""# Undate in Action""")
+    mo.md(
+        r"""
+    # Undate in Action
+
+
+    `undate` is a beta python library for working with uncertain or partially known dates with support for multiple calendars. 
+
+    https://github.com/dh-tech/undate-python/ 
+
+    Originally started at a DHtech hackathon! Builds on experiences from other digital humanities projects.
+
+
+    """
+    )
     return
 
 
