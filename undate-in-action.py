@@ -54,6 +54,7 @@ def _(mo):
 def _():
     import datetime
 
+    import altair as alt
     import polars as pl
 
     from undate import Undate
@@ -63,7 +64,7 @@ def _():
     # these are equivalent and we initialize them the same way
     dt_november7 = datetime.date(year, month, day)
     november7 = Undate(year, month, day)
-    return Undate, datetime, day, dt_november7, month, november7, pl, year
+    return Undate, alt, datetime, day, dt_november7, month, november7, pl, year
 
 
 @app.cell(hide_code=True)
@@ -291,10 +292,258 @@ def _(Undate, late2022, mo):
 
 @app.cell
 def _(mo):
+    mo.md(r"""## Example use cases from specific projects""")
+    return
+
+
+@app.cell
+def _(mo):
     mo.md(
         r"""
-    ## Example use cases from specific projects
+    ### Princeton Geniza Project
 
+    The [Princeton Geniza Project](https://geniza.princeton.edu/) is based on materials from a synagogue in Cairo; primarily medieval, primarily Hebrew script. Documents that have dates use a variety of calendars - Hebrew Anno Mundi and Seleucid calendars, as well as the Islamic Hijri calendar.
+    """
+    )
+    return
+
+
+@app.cell
+def _(NOTEBOOK_PUBLIC_DIR, Undate, pl):
+    import re
+
+    from lark.exceptions import UnexpectedEOF
+    from lark.visitors import VisitError
+
+
+    # limit to documents with dates; using standard date and not inferred dates for this
+    pgp_documents_df = pl.read_csv(
+        str(NOTEBOOK_PUBLIC_DIR / "pgp_documents.csv")
+    ).filter(pl.col("doc_date_standard").is_not_null())
+
+
+    # set this to True to see details about parsing
+    VERBOSE_PARSE_OUTPUT = False
+
+
+    def remove_ordinals(val):
+        return re.sub(r"(\d+)(st|nd|rd|th)", "\\1", val)
+
+
+    def parse_original_date(doc_date_original, doc_date_calendar):
+        # print(f"PGPID {row.pgpid} {row.doc_date_original} ({row.doc_date_calendar})")
+        undate_calendar = None
+        if doc_date_calendar == "Anno Mundi":
+            undate_calendar = "Hebrew"
+        elif doc_date_calendar == "Hijrī":
+            undate_calendar = "Islamic"
+        elif doc_date_calendar == "Seleucid":
+            # handle seleucid as hebrew with offset (adapted from PGP code)
+            undate_calendar = "Seleucid"
+
+        if undate_calendar:
+            value = doc_date_original
+
+            # some dates have unknown digits, e.g. 1[.] Kislev 48[..] or 152[.]
+            # ... the calendar parser don't support this, even though Undate does support unknown digits
+            # in future, perhaps we can add missing digit logic with this syntax to share across appropriate parsers
+            if "[." in value:
+                if VERBOSE_PARSE_OUTPUT:
+                    print(f"ignoring missing digits for now {value}")
+                value = (
+                    value.replace("[.]", "0")
+                    .replace("[..]", "00")
+                    .replace("[...]", "000")
+                )
+
+            # some dates have inferred numbers, e.g. Friday, [25] Nisan [4810] or 8 Elul (4)811'
+            # for now, just strip out brackets before parsing;
+            # in future, could potentially infer uncertainty based on these
+            value = (
+                value.replace("[", "")
+                .replace("]", "")
+                .replace("(", "")
+                .replace(")", "")
+            )
+
+            # for now, remove modifiers that are not supported by undate parser:
+            #   Late Tevet 4903, Last decade of Kislev 5004, first third of ...
+            #   some dates include of, e.g. day of month
+            modifiers = [
+                "Late ",
+                "(first|middle|last)( third|half|decade|tenth)? (of )?",
+                "(Beginning|end) of ",
+                "last day",
+                "First 10 days",
+                " of",
+                "spring",
+                "decade ",
+                "night, ",
+            ]
+            for mod in modifiers:
+                value = re.sub(mod, "", value, flags=re.I)
+
+            # there are a handful of misspelled wednesdays...
+            value = value.replace("Wedensday", "Wednesday")
+            # and a Thrusday
+            value = value.replace("Thrusday", "Thursday")
+
+            # three Hebrew calendar dates include text "AM" at end; at least one AH date
+            if value.endswith(" AM") or value.endswith(" AH"):
+                value = value[:-3]
+            if value.endswith("."):  # strip off trailing period
+                value = value[:-1]
+
+            # about 62 have ordinals; strip them out
+            value = remove_ordinals(value)
+
+            try:
+                return Undate.parse(value, undate_calendar)
+            except (VisitError, ValueError, UnexpectedEOF) as err:
+                if VERBOSE_PARSE_OUTPUT:
+                    print(f"Parse error : {value} ({undate_calendar}): {err}")
+                return None
+
+
+    pgp_documents_df = pgp_documents_df.with_columns(
+        undate_orig=pl.struct(
+            "doc_date_original", "doc_date_calendar"
+        ).map_elements(
+            lambda row: parse_original_date(
+                row["doc_date_original"], row["doc_date_calendar"]
+            ),
+            return_dtype=pl.datatypes.Object,
+        )
+    )
+
+    days = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    # filter to records that were successfully parsed; determine weekday for use with day-level precision dates
+
+    pgp_documents_df = (
+        pgp_documents_df.filter(pl.col("undate_orig").is_not_null())
+        .with_columns(
+            pl.col("type").fill_null("Unknown"),  # set null type to unknown
+            orig_date_precision=pl.col("undate_orig").map_elements(
+                lambda x: str(x.precision).lower(),
+                return_dtype=pl.datatypes.String,
+            ),
+            undate_weekday=pl.col("undate_orig").map_elements(
+                lambda x: x.earliest.weekday, return_dtype=pl.datatypes.Int32
+            ),
+        )
+        .with_columns(
+            undate_weekday_name=pl.col("undate_weekday").map_elements(
+                lambda x: days[x], return_dtype=pl.datatypes.String
+            )
+        )
+    )
+
+
+    pgp_documents_df.select(
+        "pgpid",
+        "type",
+        "doc_date_original",
+        "doc_date_calendar",
+        "doc_date_standard",
+        "undate_orig",
+        "orig_date_precision",
+        "undate_weekday_name",
+    ).head(10)
+    return days, pgp_documents_df
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Calendar dates preserve original values for year, month, and day but underneath we calculate the earliest and latest dates in Gregorian calendar so dates can be used together across calendars.
+
+    When working across calendars, dates with the same precision (year, month), have different durations in days!
+    """
+    )
+    return
+
+
+@app.cell
+def _(pgp_documents_df, pl):
+    pgp_documents_df.filter(
+        pl.col("orig_date_precision").is_in(["year", "month"])
+    ).limit(20).with_columns(
+        earliest=pl.col("undate_orig").map_elements(
+            lambda x: x.earliest, return_dtype=pl.datatypes.Object
+        ),
+        latest=pl.col("undate_orig").map_elements(
+            lambda x: x.latest, return_dtype=pl.datatypes.Object
+        ),
+        duration=pl.col("undate_orig").map_elements(
+            lambda x: x.duration().days, return_dtype=pl.datatypes.Object
+        ),
+    ).select(
+        "doc_date_original",
+        "doc_date_calendar",
+        "undate_orig",
+        "earliest",
+        "latest",
+        "duration",
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+    Undate objects store date precision, so we can easily see what the variation is in the precision of the dates we're able to parse.
+
+    Note that this is somewhat skewed by the dates we're able to parse and the  modifiers we don't yet handle that were ignored during parsing.
+    """
+    )
+    return
+
+
+@app.cell
+def _(pgp_documents_df):
+    # this is skewed because of the kinds of dates we're not able to parse or modifiers we're omitting entirely
+    pgp_documents_df["orig_date_precision"].value_counts()
+    return
+
+
+@app.cell
+def _(alt, days, pgp_documents_df, pl):
+    alt.Chart(
+        pgp_documents_df.filter(pl.col("orig_date_precision").eq("day")).select(
+            "type", "undate_weekday", "undate_weekday_name", "pgpid"
+        )
+    ).mark_rect().encode(
+        alt.X("undate_weekday_name", sort=days, title="weekday"),
+        alt.Color("count(pgpid)", title="# of documents"),
+    ).facet(
+        row=alt.Facet(
+            "type",
+            title="",
+            header=alt.Header(
+                labelAngle=0, labelAnchor="start", labelBaseline="bottom"
+            ),
+        )
+    ).resolve_scale(color="independent").properties(
+        title="Document frequency by weekday"
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
     ### Shakespeare and Company Project
 
     [Shakespeare and Company Project](https://shakespeareandco.princeton.edu/) is based on the materials from Sylvia Beach's famous English-language lending library which operated in Paris in the 1920s and 1930s.
@@ -394,10 +643,7 @@ def _(mo):
 
 
 @app.cell
-def _():
-    import altair as alt
-
-
+def _(alt):
     def raincloud_plot(dataset, fieldname, field_label, color_opts=None):
         """Create a raincloud plot for the density of the specified field
         in the given dataset. Takes an optional tooltip for the strip plot.
@@ -460,7 +706,7 @@ def _():
             spacing=0
         )
         return raincloud_plot
-    return alt, raincloud_plot
+    return (raincloud_plot,)
 
 
 @app.cell
