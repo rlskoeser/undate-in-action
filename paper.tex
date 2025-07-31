@@ -9,6 +9,12 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 % ADD your own packages using \usepackage{}
+\usepackage{minted}
+\usemintedstyle{manni}
+\usepackage{xcolor}
+\definecolor{LightGray}{gray}{0.95}
+\setminted[python]{bgcolor=LightGray}
+\usepackage{relsize}
 
 % TITLE OF THE SUBMISSION
 % Change this to the name of your submission
@@ -56,13 +62,360 @@ This LaTeX template helps you typeset and format a paper for the Computational H
 
 \section{Introduction} 
 
-Here is an example of the first section of the paper. You may modify \texttt{paper.tex} by renaming, deleting, or adding sections of your own and substituting our instructional text with the text of your paper. Add references to previous work to \texttt{biblography.bib} as BibTeX entries. Refer to the Conference Call for Papers (CfP) for details about submission types and paper lengths. Do \textit{not} modify \texttt{anthology-ch.cls} when editing this template. 
 
-\subsection{Details} \label{sec:intro_details}
+\texttt{undate} is a beta Python library for working with uncertain or partially known dates, with support for multiple calendars.
 
-You may also include subsections if they help organize your text, but they
-are not required. Use as many sections and subsections with whatever names work
-for your submission!
+https://github.com/dh-tech/undate-python/
+
+Originally started at a DHtech hackathon! Builds on experiences from
+other digital humanities projects.
+
+\subsection{How is \texttt{Undate} like \texttt{datetime.date} ?} \label{sec:intro_details}
+
+
+Both can be initialized by specifying numeric values for year, month, and day. Both can be printed using the default serialization (ISO8601, or YYYY-MM-DD), and we can compare them.
+
+\begin{minted}{python}
+import datetime
+
+from undate import Undate
+
+year, month, day = 2000, 11, 7
+
+# these are equivalent and we initialize them the same way
+dt_november7 = datetime.date(year, month, day)
+november7 = Undate(year, month, day)
+
+assert november7 == dt_november
+\end{minted}
+
+
+\subsection{How is \texttt{Undate} \textit{not} like \texttt{datetime.date}?}
+
+An \texttt{Undate} can be initialized with partial information.  \texttt{Undate} can also take an optional label, since sometimes it's useful to name a date.  It can be initialized with year and month, just year, or even month and day with no year.
+
+\begin{minted}{python}
+# November 2000
+november = Undate(year, month, label="November 2000")
+# Year 2000
+year2k = Undate(year, label="Y2K")
+# November 7 in an unknown year
+november7_some_year = Undate(month=month, day=day, label="Some November 7")
+november7.label = "November 7, 2000"
+
+# sometimes names are important
+easter1916 = Undate(1916, 4, 23, label="Easter 1916")
+\end{minted}
+
+
+If you try to do that with \texttt{datetime.date}, you get a
+\texttt{TypeError} because all three fields are required.
+
+\begin{minted}{python}
+try:
+    datetime.date(year, month)
+except TypeError as err:
+    print(err)
+
+"function missing required argument 'day' (pos 3)"
+\end{minted}
+
+
+Each of these \texttt{Undate} objects can be printed out in a standard
+format; the \texttt{Undate} class also tracks how precisely a date is
+specified, and can calculate the duration.  If we iterate over the
+example partially-known dates initialized in the code block above and print label, formatted date, precision, and duration in days, we get output like this (here and throughout, formatting added for readability):
+
+\begin{minted}{python}
+for example_date in [
+    november,
+    year2k,
+    november7_some_year,
+    november7,
+    easter1916,
+]:
+print(f"""{example_date.label} {example_date}
+- Date precision: {example_date.precision}
+- Duration in days: {example_date.duration().days}""")
+\end{minted}
+
+\paragraph{November 2000} \texttt{2000-11}
+\begin{itemize}
+    \item Date precision: MONTH
+    \item Duration in days: 30
+\end{itemize}
+
+\paragraph{Y2K} \texttt{2000}
+\begin{itemize}
+    \item Date precision: YEAR
+    \item Duration in days: 366
+\end{itemize}
+
+\paragraph{Some November 7} \texttt{-}\texttt{-11-07}
+\begin{itemize}
+   \item  Date precision: DAY
+   \item Duration in days: 1
+\end{itemize}
+
+\paragraph{November 7, 2000} \texttt{2000-11-07}
+\begin{itemize}
+    \item Date precision: DAY
+    \item Duration in days: 1
+\end{itemize}
+
+\paragraph{Easter 1916} \texttt{1916-04-23}
+\begin{itemize}
+    \item Date precision: DAY
+    \item Duration in days: 1
+\end{itemize}
+
+We can also do some simple calculations, like checking whether one date falls within another date.
+\begin{minted}{python}
+assert november in year2k   # 2000-11 in 2000
+assert november7 in november  # 2000-11-07 in 2000-11
+assert easter1916 not in year2k  # 1916-02-23 not in 2000
+assert november7_some_year not in year2k  # --11-07 not in 2000
+\end{minted}
+
+\section{What else can \texttt{Undate} do?}
+
+\subsection{Partially known values}
+
+In the last set of examples, the values used to initialize \texttt{Undate} instances were all integers and parts of the date were either known or unknown. But what if you know part of a
+date?
+
+You can initialize \texttt{Undate} with strings and use \texttt{X} to
+indicate unknown values.  (We chose \texttt{X} based on the \href{https://www.loc.gov/standards/datetime/}{Extended Date Time Format (EDTF)} specification).
+
+Here we initialize two dates with partially known information, where a year or month cannot be precisely pinned down but some information is known. As before, we can iterate over these dates
+and output label, formatted date, precision, and duration:
+
+\begin{minted}{python}
+someyear_1900s = Undate("19XX", label="1900s")
+late2022 = Undate(2022, "1X", label="late 2022")
+
+for example_date in [someyear_1900s, late2022]:
+    print(f"""{example_date.label} {example_date}
+- Date precision: {example_date.precision}
+- Duration in days: {max(example_date.duration().days)}
+)
+\end{minted}
+
+\paragraph{1900s} \texttt{19XX}
+\begin{itemize}
+    \item Date precision: YEAR
+    \item Duration in days: 366
+\end{itemize}
+    
+\paragraph{late 2022} \texttt{2022-1X}
+\begin{itemize}
+    \item Date precision: MONTH
+    \item Duration in days: 31
+\end{itemize}    
+
+    
+If you try that with \texttt{datetime.date} you get another \texttt{TypeError}.    
+
+\begin{minted}{python}
+try:
+    datetime.date("19XX", 1, 1)
+except TypeError as err:
+    print(err)
+
+"'str' object cannot be interpreted as an integer"
+\end{minted}
+
+\subsection{Uncertain durations}
+
+If you were paying close attention, you may have noticed I used the
+\texttt{max()} function in the code block above where I output the duration for the partially known dates.
+
+The most recent version of \texttt{undate} (version 0.5) includes experimental support for 
+uncertain time deltas.
+
+\begin{minted}{python}
+print(f"""{someyear_1900s.label} {someyear_1900s}
+- duration: {someyear_1900s.duration()}
+- duration in days: {someyear_1900s.duration().days}
+
+{late2022.label} {late2022}
+- duration: {late2022.duration()}
+- duration in days: {late2022.duration().days}
+"""
+\end{minted}
+
+\paragraph{1900s} \texttt{19XX}
+\begin{itemize}
+    \item duration: \texttt{UnDelta(days=[365,366])}
+    \item duration in days: \texttt{UnInt(lower=365, upper=366)}
+\end{itemize}
+
+\paragraph{late 2022} \texttt{2022-1X}
+\begin{itemize}
+    \item duration: \texttt{UnDelta(days=[30,31])}
+    \item duration in days: \texttt{UnInt(lower=30, upper=31)}
+\end{itemize}
+    
+    
+Even without precise information, we can still do some useful comparisons. February of an unknown year is still shorter than October, November, or December.
+
+\begin{minted}{python}
+some_february = Undate(month=2, label="February of some year")
+assert some_february.duration() < late2022.duration()
+
+# February of an unknown year is shorter than 
+# an uncertain month 1X (October, November, or December) 
+some_february.duration() < late2022.duration() = True
+
+assert some_february.duration() < late2022.duration()
+
+print(f"""### {some_february.label} {some_february}
+- duration: {some_february.duration()}
+- duration in days: {some_february.duration().days}
+""")
+
+\end{minted}
+
+\paragraph{February of some year} \texttt{-}{-02}
+\begin{itemize}
+    \item duration: \texttt{UnDelta(days=[28,29])}
+    \item duration in days: \texttt{UnInt(lower=28, upper=29)}
+\end{itemize}
+    
+\section{Example use cases from specific projects}\label{example-use-cases-from-specific-projects}
+
+
+\textbf{TODO}: briefly describe here how undate generalizes work from projects and is informed by project-specific context, and we hope to keep that way in future (quote sw article?)
+
+\subsection{Princeton Geniza Project}\label{princeton-geniza-project}
+
+The \href{https://geniza.princeton.edu/}{\textit{Princeton Geniza Project}} (PGP) is
+a long-running project focused on materials from a synagogue in Cairo; these contents are
+primarily medieval, and largely written in Hebrew script. Because they are older and fragmentary, many of them cannot be dated;  those documents that do have dates use a variety of calendars — the Hebrew \textit{Anno Mundi} and Seleucid calendars, as well as the
+Islamic \textit{Hijri} calendar. 
+
+An \texttt{Undate} instance preserves any initial values for year, month, and day in the original calendar. As you see in Table \ref{tab:pgp-parsed-dates}, the ISO format \texttt{Undate} corresponds to the original date rather than the standardized date.
+
+\begin{table}[h]
+  \centering 
+  \begin{tabular}{rlllllll}
+    \toprule
+Original Date & Calendar & Standard date & \texttt{Undate} & Date precision & Weekday \\ 
+\midrule\addlinespace[2.5pt]
+1570 & Seleucid & 1259 & 1570 & year &  \\
+Tammuz 1288 & Seleucid & 0977-06-21/0977-07-19 & 1288-04 & month &  \\
+19 Adar 1427 & Seleucid & 1116-03-05 & 1427-12-19 & day & Sunday \\
+\midrule
+4890 & Anno Mundi & 1129-09-16/1130-09-05 & 4890 & year &  \\
+Av 5564 & Anno Mundi & 1804-07-09/1804-08-07 & 5564-05 & month &  \\
+10 Nisan 4716 & Anno Mundi & 0956-03-24 & 4716-01-10 & day & Monday \\
+\midrule
+537 & Hijrī & 1142-07-27/1143-07-15 & 0537 & year &  \\
+Shawwāl 425 & Hijrī & 1034-08-29/1034-09-07 & 0425-10 & month &  \\
+5 Safar 584 & Hijrī & 1188-04-05 & 0584-02-05 & day & Tuesday \\
+\bottomrule
+    \bottomrule
+  \end{tabular}
+  \caption{A sampling of dates from PGP documents in different calendars; dates have been parsed by \texttt{Undate}, which was then used to report precision and weekday.}
+  \label{tab:pgp-parsed-dates}
+\end{table}
+
+Under the hood, \texttt{undate} calculates the earliest and latest possible dates in range for comparison and sorting. When an \texttt{Undate} object is initialized with a different calendar, the earliest and latest dates are based on conversion to the Gregorian calendar so that dates can be compared and used together across calendars. (For the code used to parse PGP document dates displayed in this example, refer to Appendix \ref{appdx:parse-pgp-dates}). When working across calendars, dates with the same precision (year, month) often have different durations in days.
+
+\begin{table}[h]
+  \centering 
+  \begin{tabular}{rlllllll}
+    \toprule
+Original Date & Calendar & \texttt{Undate} & Earliest & Latest & Date Precision & Duration \\ 
+\midrule
+1570 & Seleucid & 1570 & 1258-09-07 & 1259-09-26 & year & 383 \\
+1474 & Seleucid & 1474 & 1162-09-18 & 1163-09-06 & year & 354 \\
+Tevet 1363 & Seleucid & 1363-10 & 1051-12-14 & 1052-01-11 & month & 29 \\
+{[12]91} & Seleucid & 1291 & 0979-09-30 & 0980-09-17 & year & 353 \\
+Heshvan 1453 & Seleucid & 1453-08 & 1141-10-11 & 1141-11-08 & month & UnInt(29,30) \\
+1347 & Seleucid & 1347 & 1035-09-12 & 1036-09-28 & year &  383 \\
+\midrule
+Shevat (4)791 & Anno Mundi & 4791-11 & 1031-01-03 & 1031-02-01 & month & UnInt(29,30) \\
+4812 & Anno Mundi & 4812 & 1051-09-15 & 1052-09-03 & year & 385 \\
+\midrule
+502 & Hijrī & 0502 & 1108-08-18 & 1109-08-06 & year & 354 \\
+Muḥarram 557 & Hijrī & 0557-01 & 1161-12-28 & 1162-01-26 & month & 30 \\
+Dhū l-Qa'da 525 & Hijrī & 0525-11 & 1131-10-02 & 1131-10-31 & month & 29 \\
+\bottomrule
+    \bottomrule
+  \end{tabular}
+  \caption{Another sampling of dates from PGP documents in different calendars parsed by \texttt{Undate}. Earliest and latest dates are calculated in Gregorian / proleptic Gregorian calendar. Semantic durations like year and month result in different durations in days when working with multiple calendars.}
+  \label{tab:pgp-date-durations}
+\end{table}
+
+%% should any of these be UnInt? might be a bug in undate...
+
+An \texttt{Undate} object is aware of date precision, which means that in a dataset with mixed precision dates like PGP, once the dates are parsed we can easily see the variation (Table \ref{tab:pgp-parsed-dates}).\footnote{With the caveat that in this case the results are somewhat skewed by the dates we're able to parse; PGP data includes the modifiers not yet supported by \texttt{undate}, which were ignored during parsing}.
+
+\begin{table}[h]
+  \centering 
+  \begin{tabular}{cc}
+    \toprule
+    Original Date precision & Documents \\ 
+    \midrule
+    year & 831 \\
+    month & 1,021 \\
+    day & 1,558 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Totals for PGP documents and date precision}
+    \medskip
+    \small
+    Only includes documents with standard dates that can be parsed by \texttt{undate}.
+  \label{tab:example}
+\end{table}
+
+
+todo: add doc frequency by weekday from undate sw paper
+
+
+\subsection{Shakespeare and Company
+Project}\label{shakespeare-and-company-project}
+
+\href{https://shakespeareandco.princeton.edu/}{\textit{Shakespeare and Company
+Project}} is based on the materials from Sylvia Beach's famous
+English-language lending library which operated in Paris in the 1920s
+and 1930s.
+
+This project includes borrowing events with unknown years; with
+\texttt{undate} we can calculate how long a book was borrowed even when
+we don't know the exact year.
+
+First we define a couple of methods that we'll use with the data; one to
+parse the date and calculate duration in days, and another for an
+indicator whether the year was known or not.
+
+
+\begin{table}[h]
+  \centering 
+  \begin{tabular}{lllrllrrl}
+    \toprule
+    Start Date & End Date & Duration & Title & Author \\ 
+    \midrule
+--01-19 & --01-24 & 5 & \textit{A Hazard of New Fortunes} & Howells, William Dean \\
+--01-24 & --05-30 & 126 & \textit{Boston Cooking-School Cook Book} & Farmer, Fannie Merritt \\
+--01-24 & --03-20 & 55 & \textit{The Landlord at Lion's Head} & Howells, William Dean \\
+--01-24 & --05-30 & 126 & \textit{Mrs. Rorer's New Cook Book} & Rorer, Sarah Tyson \\
+--01-24 & --03-20 & 55 & \textit{Indian Summer} & Howells, William Dean \\
+--01-24 & --03-20 & 55 & \textit{A Foregone Conclusion} & Howells, William Dean \\
+--01-24 & --03-20 & 55 & \textit{Dr. Breen's Practice} & Howells, William Dean \\
+1920-04-29 & 1920-06-03 & 35 & \textit{The Letters of George Meredith} & Meredith, George \\
+    \bottomrule
+  \end{tabular}
+  \caption{Example table and table caption.}
+  \label{tab:example}
+\end{table}
+
+
+
+
+-------
+
 
 \paragraph{Another tip.} In some cases, it may be helpful to use \texttt{paragraph} to title individual paragraphs. For example, if a section describes features for a classifier, you can optionally title each paragraph with the name of each feature. 
 
@@ -118,15 +471,171 @@ Do \textit{not} change the font size of table and figure captions, or the spacin
   \label{fig:example_bigger}
 \end{figure}
 
-\section*{Acknowledgements}
-
-This unnumbered section should be blank when submitting your paper. After review, you may include lists of people and organizations who supported the work.
+%\section*{Acknowledgements}
+%
+%This unnumbered section should be blank when submitting your paper. After review, you may include lists of people and organizations who supported the work.
 
 % Print the biblography at the end. Keep this line after the main text of your paper, and before an appendix. 
 \printbibliography
 
 % You can include an appendix using the following command
 \appendix
+
+\section{Parsing PGP document dates in multiple calendars} \label{appdx:parse-pgp-dates}
+
+Princeton Geniza Project data includes documents with original dates in multiple calendars.  \texttt{undate} does not yet provide an omnibus parser, so dates must be parsed according to their a known, supported calendar.  The dates in this dataset are complicated and messy, and include qualifiers and uncertainty not yet supported by \texttt{undat}e parsing. For demonstration purposes, this example code removes and ignores those complexities.
+
+Adapted from an \href{https://github.com/dh-tech/undate-python/blob/main/examples/pgp_dates.ipynb}{example notebook} included in the \texttt{undate} software repository.
+
+\begin{minted}{python}
+import re
+
+from lark.exceptions import UnexpectedEOF
+from lark.visitors import VisitError
+import polars as pl
+
+
+# set this to True to see details about parsing
+VERBOSE_PARSE_OUTPUT = False
+
+
+def remove_ordinals(val):
+    # utility method to turn ordinals into numerals
+    # i.e., 1st, 2nd, 3rd -> 1, 2, 3
+    return re.sub(r"(\d+)(st|nd|rd|th)", "\\1", val)
+
+
+def parse_original_date(doc_date_original, doc_date_calendar):
+    # Map PGP original calendar to undate calendar converter
+    undate_calendar = None
+    if doc_date_calendar == "Anno Mundi":
+        undate_calendar = "Hebrew"
+    elif doc_date_calendar == "Hijrī":
+        undate_calendar = "Islamic"
+    elif doc_date_calendar == "Seleucid":
+        undate_calendar = "Seleucid"
+
+    if undate_calendar:
+        value = doc_date_original
+
+        # some dates have unknown digits, e.g. 1[.] Kislev 48[..] or 152[.]
+        # Replace with zeros for now, since the calendar parsers
+        # doesn't yet support this syntax
+        # (even though Undate supports unknown digits)
+        if "[." in value:
+            if VERBOSE_PARSE_OUTPUT:
+                print(f"ignoring missing digits for now {value}")
+            value = (
+                value.replace("[.]", "0")
+                .replace("[..]", "00")
+                .replace("[...]", "000")
+            )
+
+        # some dates have inferred numbers, 
+        # e.g. Friday, [25] Nisan [4810] or 8 Elul (4)811'
+        # for now, we strip out brackets before parsing;
+        # in future, we could indicate uncertainty based on these
+        value = (
+            value.replace("[", "")
+            .replace("]", "")
+            .replace("(", "")
+            .replace(")", "")
+        )
+
+        # for now, remove modifiers not supported by the undate parser:
+        #   Late Tevet 4903, Last decade of Kislev 5004, first third of ...
+        modifiers = [
+            "Late ",
+            "(first|middle|last)( third|half|decade|tenth)? (of )?",
+            "(Beginning|end) of ",
+            "last day",
+            "First 10 days",
+            " of",
+            "spring",
+            "decade ",
+            "night, ",
+        ]
+        for mod in modifiers:
+            value = re.sub(mod, "", value, flags=re.I)
+
+        # about 62 have ordinals; strip them out
+        value = remove_ordinals(value)
+
+        # parse the simplified, cleaned up date string 
+        # with the specified calendar
+        try:
+            return Undate.parse(value, undate_calendar)
+        except (VisitError, ValueError, UnexpectedEOF) as err:
+            if VERBOSE_PARSE_OUTPUT:
+                print(f"Parse error : {value} ({undate_calendar}): {err}")
+            return None
+
+# Use Polars to load data file into a DataFrame
+# Filter to documents with standard dates
+pgp_documents_df = pl.read_csv("pgp_documents.csv") \     
+    .filter(
+        pl.col("doc_date_standard").is_not_null()
+    )
+    
+# Create a struct of original date and calendar,
+# which we can pass to our parse method.
+# If parsing succeeds, returns and Undate or UndateInterval
+pgp_documents_df = pgp_documents_df.with_columns(
+    undate_orig=pl.struct(
+        "doc_date_original", "doc_date_calendar"
+    ).map_elements(
+        lambda row: parse_original_date(
+            row["doc_date_original"], row["doc_date_calendar"]
+        ),
+        return_dtype=pl.datatypes.Object,
+    )
+)
+days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+
+# filter to records that were successfully parsed; determine weekday for use with day-level precision dates
+
+pgp_documents_df = (
+    pgp_documents_df.filter(pl.col("undate_orig").is_not_null())
+    .with_columns(
+        pl.col("type").fill_null("Unknown"),  # set null type to unknown
+        orig_date_precision=pl.col("undate_orig").map_elements(
+            lambda x: str(x.precision).lower(),
+            return_dtype=pl.datatypes.String,
+        ),
+        undate_weekday=pl.col("undate_orig").map_elements(
+            lambda x: x.earliest.weekday, return_dtype=pl.datatypes.Int32
+        ),
+    )
+    .with_columns(
+        undate_weekday_name=pl.col("undate_weekday").map_elements(
+            lambda x: days[x], return_dtype=pl.datatypes.String
+        )
+    )
+)
+
+# filter to relevant fields and display the first ten rows
+pgp_documents_df.select(
+    "pgpid",
+    "type",
+    "doc_date_original",
+    "doc_date_calendar",
+    "doc_date_standard",
+    "undate_orig",
+    "orig_date_precision",
+    "undate_weekday_name",
+).head(10)    
+\end{minted}
+
+
+\end{document}
 
 \section{First Appendix Section} \label{appdx:first}
 
