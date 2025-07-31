@@ -63,12 +63,10 @@ This LaTeX template helps you typeset and format a paper for the Computational H
 \section{Introduction} 
 
 
-\texttt{undate} is a beta Python library for working with uncertain or partially known dates, with support for multiple calendars.
+\texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_2025}. It is "an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats" \cite{koeser_princeton_2025}. The software is available on GitHub\footnote{https://github.com/dh-tech/undate-python/}. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects.
 
-https://github.com/dh-tech/undate-python/
+For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.
 
-Originally started at a DHtech hackathon! Builds on experiences from
-other digital humanities projects.
 
 \subsection{How is \texttt{Undate} like \texttt{datetime.date} ?} \label{sec:intro_details}
 
@@ -350,7 +348,7 @@ Dhū l-Qa'da 525 & Hijrī & 0525-11 & 1131-10-02 & 1131-10-31 & month & 29 \\
 
 %% should any of these be UnInt? might be a bug in undate...
 
-An \texttt{Undate} object is aware of date precision, which means that in a dataset with mixed precision dates like PGP, once the dates are parsed we can easily see the variation (Table \ref{tab:pgp-parsed-dates}).\footnote{With the caveat that in this case the results are somewhat skewed by the dates we're able to parse; PGP data includes the modifiers not yet supported by \texttt{undate}, which were ignored during parsing}.
+An \texttt{Undate} object is aware of date precision, which means that in a dataset with mixed precision dates like PGP, once the dates are parsed we can easily see the variation (Table \ref{tab:pgp-parsed-dates}).\footnote{With the caveat that in this case the results are somewhat skewed by the dates we're able to parse; PGP data includes the modifiers not yet supported by \texttt{undate}, which were ignored during parsing.}
 
 \begin{table}[h]
   \centering 
@@ -370,6 +368,14 @@ An \texttt{Undate} object is aware of date precision, which means that in a data
   \label{tab:example}
 \end{table}
 
+Preserving available details in mixed precision dates offers new opportunities for analysis; for instance, we can analyze weekday frequency by document type (Figure \ref{fig:pgp-weekday-frequency} ). In the PGP data, Legal documents and letters are the types of documents most likely to have a clear date. When visualized with a heatmap, the results match our expectations: Saturday is light for both types, because it is the Hebrew Shabbat, a day of rest. Monday and Thursday are the traditional convening days for court sessions, which is reflected in the preponderance of Legal documents on those days.
+
+\begin{figure}[t!]
+  \centering
+  \includegraphics[width=0.4\linewidth]{assets/pgp_letters_legaldocs_weekday.pdf}
+  \caption{Legal documents and letters frequency by weekday.}
+  \label{fig:pgp-weekday-frequency}
+\end{figure}
 
 todo: add doc frequency by weekday from undate sw paper
 
