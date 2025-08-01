@@ -35,7 +35,7 @@
 % KEYWORDS
 % Provide one or more keywords or key phrases seperated by commas
 % using the following command
-\keywords{computers, humanities proceedings}
+\keywords{dates, calendars, partial information, software, digital humanities, python}
 
 % METADATA FOR THE PUBLICATION
 % This will be filled in when the document is published; the values can
@@ -57,15 +57,12 @@
 \maketitle
 
 \begin{abstract}
-This LaTeX template helps you typeset and format a paper for the Computational Humanities Research conference in the ACH Anthology. This template helps you adhere to the the required specifications and provides an example of how your paper should look. In practice, the abstract of the paper here should be a one-paragraph summary of the outline and main contributions of the paper. 
+This paper provides an introduction to the \texttt{undate} python library with an emphasis on demonstrating supported functionality with some example use cases from specific projects. \texttt{undate} is designed for working with uncertain and partially known dates, and also includes support for dates in multiple calendars and with mixed precision. This paper provides an overview of the basic functionality with comparison to the Python built-in \texttt{datetime.date}, demonstrating support for missing and partially known values. Use cases and data from \textit{Princeton Geniza Project} and \textit{Shakespeare and Company Project} are used to further demonstrate the value and practical application of \texttt{undate} for parsing and comparing mixed precision dates in multiple calendars, and for calculating and plotting durations for events with known days but unknown years. This paper was originally presented as a "tool presentation" at the Digital Humanities Tech Symposium at DH2025.
 \end{abstract}
 
 \section{Introduction} 
 
-
 \texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_2025}. It is "an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats" \cite{koeser_princeton_2025}. The software is available on GitHub\footnote{https://github.com/dh-tech/undate-python/}. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects.
-
-For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.\footnote{An interactive version of this tool presentation is available online in the form of a Marimo notebook at https://rlskoeser.github.io/undate-in-action/}
 
 \begin{figure}[h]
   \centering
@@ -74,6 +71,7 @@ For an in depth understanding of the context, goals, humanities and software dev
   \label{fig:logo}
 \end{figure}
 
+For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.\footnote{An interactive version of this tool presentation is available online in the form of a Marimo notebook at https://rlskoeser.github.io/undate-in-action/}
 
 \subsection{How is \texttt{Undate} like \texttt{datetime.date} ?} \label{sec:intro_details}
 
@@ -299,8 +297,7 @@ the \textit{Islamic Scientific Manuscripts Initiative} (ISMI)" \cite{koeser_prin
 The \href{https://geniza.princeton.edu/}{\textit{Princeton Geniza Project}} (PGP) is
 a long-running project focused on materials from a synagogue in Cairo; these contents are
 primarily medieval, and largely written in Hebrew script. Because they are older and fragmentary, many of them cannot be dated;  those documents that do have dates use a variety of calendars — the Hebrew \textit{Anno Mundi} and Seleucid calendars, as well as the
-Islamic \textit{Hijri} calendar.  Here, we use PGP data \cite{rustow_princeton_2025} to demonstrate calendar parsing and conversion functionality. 
-
+Islamic \textit{Hijri} calendar.  This project is one of the precursors that fed into the development of \texttt{undate}, due to the need to support multiple calendars, mixed precision, and various kinds of temporal uncertainty \cite{rustow_dating_2020}. Here, we use published PGP data \cite{rustow_princeton_2025} to demonstrate \texttt{undate} calendar parsing and conversion functionality. 
 
 An \texttt{Undate} instance preserves any initial values for year, month, and day in the original calendar. As you see in Table \ref{tab:pgp-parsed-dates}, the ISO format \texttt{Undate} corresponds to the original date rather than the standardized date.
 
@@ -392,19 +389,18 @@ Preserving available details in mixed precision dates offers new opportunities f
 \subsection{Shakespeare and Company
 Project}\label{shakespeare-and-company-project}
 
-\href{https://shakespeareandco.princeton.edu/}{\textit{Shakespeare and Company
+The \href{https://shakespeareandco.princeton.edu/}{\textit{Shakespeare and Company
 Project}} is based on the materials from Sylvia Beach's famous
 English-language lending library which operated in Paris in the 1920s
-and 1930s.
+and 1930s. This project is one of the precursors that fed into the development of \texttt{undate}, with
+an implementation to support incomplete dates written on handwritten cards \cite{kotin_shakespeare_2022, koeser_coding_2019}.
 
-This project includes borrowing events with unknown years; with
-\texttt{undate} we can calculate how long a book was borrowed even when
-we don't know the exact year. We use Gertrude Stein as an example here, since she is a well known figure with partially known dates in the project (but she is far from the only one).
-Stein has 46 borrow events with calculable duration; of those 7, or 15\% have no
-known year.
-
-The full code used to calculate durations and plot them is available in Appendix \ref{appdx:shxco-duration-raincloud}.  Here we show a sample of the parsed borrow events (Table \ref{tab:stein-borrowing}) and a raincloud plot of Stein's borrowing (Figure 
-
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\linewidth]{assets/stein_lendingcard_unknownyear.jpg}
+  \caption{Detail from Gertrude Stein's lending library card showing handwritten borrow events with no year. \cite{stein_beachpapers_pul, noauthor_gertrude_nodate} }
+  \label{fig:stein-lending-card}
+\end{figure}
 
 
 \begin{table}[h]
@@ -428,6 +424,12 @@ The full code used to calculate durations and plot them is available in Appendix
 \end{table}
 
 
+This project includes borrowing events with unknown years; with
+\texttt{undate} we can calculate how long a book was borrowed even when
+we don't know the exact year. We use Gertrude Stein as an example here, since she is a well known figure with documented borrowing activity without known years (Figure \ref{fig:stein-lending-card}), although she is far from the only one\footnote{Stein is famous enough that these unknowns could perhaps be resolved through research; that is not the case for the lesser known members of this library.}. Stein has 46 borrow events with calculable duration; of those 7, or 15\% have no known year.  If we limit our analysis to borrow events with known years, we arrive at an average borrow length of 32 days and a maximum of 91 days. However, when we include events with unknown years we get an average of 38 and a maximum of 126 days.
+
+The full code used to calculate durations and plot them is available in Appendix \ref{appdx:shxco-duration-raincloud}.  Here we show a sample of the parsed borrow events (Table \ref{tab:stein-borrowing}) and a raincloud plot of Stein's borrowing (Figure \ref{fig:stein-borrow-raincloud}) to demonstrate the value of including partial information in our analysis. 
+
 
 \begin{figure}[t!]
   \centering
@@ -437,6 +439,9 @@ she borrowed.  Borrows with unknown years are highlighted in orange in the lower
   \label{fig:stein-borrow-raincloud}
 \end{figure}
 
+\section{Conclusion}
+
+This paper provides a demonstration of some of the current functionality of the \texttt{undate} python library, although it is certainly not exhaustive. We have barely touched on intervals and some fo the calculations and logic around uncertainty that are currently supported. This package is still in active development, with tremendous potential in multiple directions. We plan to continue adding support for more calendars and formats (e.g., RDF and CIDOC-CRM), and improve the support for ambiguity and granularity in parsing and date precisions.  Another avenue of interest is representing the temporal uncertainty in data visualizations based on \texttt{undate} parsing and analysis \cite{yau_visualizing_2018}. Development on \texttt{undate} input and use cases from the community to steer and prioritize the work, to ensure that work is interpretable and usable in the context of a specific project while still being general enough to be usable and accurate across disparate projects. 
 
 
 
