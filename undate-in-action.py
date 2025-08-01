@@ -25,8 +25,6 @@ def _(mo):
     https://github.com/dh-tech/undate-python/ 
 
     Originally started at a DHtech hackathon! Builds on experiences from other digital humanities projects.
-
-
     """
     )
     return
@@ -57,7 +55,7 @@ def _(mo):
 
     Both can be initialized by specifying numeric values for year, month, and day.
 
-    Both can printed with using the default serialization (ISO8601, or YYYY-MM-DD), and we can compare them.
+    Both can be printed with using the default serialization (ISO8601, or YYYY-MM-DD), and we can compare them.
     """
     )
     return
@@ -206,7 +204,7 @@ def _(mo):
 
     In the last set of examples, the values were all integers and parts of the date were either known or unknown.  But what if you know part of a date?
 
-    You can initialize `Undate` with strings and use `X` to indcate unknown values.
+    You can initialize `Undate` with strings and use `X` to indicate unknown values.
     """
     )
     return
@@ -253,7 +251,7 @@ def _(mo):
 
     If you were paying close attention, you might have noticed I used the `max()` function the last time I output the duration.
 
-    The most recent version of `undate` (v0.5) includes code for uncertain tim deltas.
+    The most recent version of `undate` (v0.5) includes code for uncertain time deltas.
     """
     )
     return
@@ -298,7 +296,7 @@ def _(Undate, late2022, mo):
 
     Is February of an unknown year shorter than an uncertain month 1X? (October, November, or December)
 
-    `some_february.duration() < late2022.duration() = { some_february.duration() < late2022.duration() }`
+    `some_february.duration() < late2022.duration() = {some_february.duration() < late2022.duration()}`
     """)
     return
 
@@ -488,26 +486,36 @@ def _(mo):
 
 @app.cell
 def _(pgp_documents_df, pl):
-    pgp_documents_df.filter(
-        pl.col("orig_date_precision").is_in(["year", "month"])
-    ).limit(20).with_columns(
-        earliest=pl.col("undate_orig").map_elements(
-            lambda x: x.earliest, return_dtype=pl.datatypes.Object
-        ),
-        latest=pl.col("undate_orig").map_elements(
-            lambda x: x.latest, return_dtype=pl.datatypes.Object
-        ),
-        duration=pl.col("undate_orig").map_elements(
-            lambda x: x.duration().days, return_dtype=pl.datatypes.Object
-        ),
-    ).select(
-        "doc_date_original",
-        "doc_date_calendar",
-        "undate_orig",
-        "earliest",
-        "latest",
-        "duration",
+    duration_display_df = (
+        pgp_documents_df.filter(
+            pl.col("orig_date_precision").is_in(["year", "month"])
+        )
+        # .limit(20)
+        .with_columns(
+            earliest=pl.col("undate_orig").map_elements(
+                lambda x: str(x.earliest), return_dtype=pl.datatypes.String
+            ),
+            latest=pl.col("undate_orig").map_elements(
+                lambda x: str(x.latest), return_dtype=pl.datatypes.String
+            ),
+            duration=pl.col("undate_orig").map_elements(
+                lambda x: repr(x.duration().days), return_dtype=pl.datatypes.String
+            ),
+            undate_orig=pl.col("undate_orig").map_elements(
+                lambda x: str(x), return_dtype=pl.datatypes.String
+            ),
+        )
+        .select(
+            "doc_date_original",
+            "doc_date_calendar",
+            "undate_orig",
+            "orig_date_precision",
+            "earliest",
+            "latest",
+            "duration",
+        )
     )
+    duration_display_df
     return
 
 
@@ -734,6 +742,31 @@ def _(alt, raincloud_plot, stein_borrow_events_df):
     # uncomment to save as PDF; requires vl-convert
     # stein_borrows.save("shxco_stein_borrows.pdf")
     stein_borrows
+    return
+
+
+@app.cell
+def _(mo, pl, stein_borrow_events_df):
+    mean_all_durations = stein_borrow_events_df["undate_duration"].mean()
+    max_all_durations = stein_borrow_events_df["undate_duration"].max()
+    mean_knownyear_durations = stein_borrow_events_df.filter(
+        pl.col("known_year").eq("known")
+    )["undate_duration"].mean()
+    max_knownyear_durations = stein_borrow_events_df.filter(
+        pl.col("known_year").eq("known")
+    )["undate_duration"].max()
+
+    mo.md(f"""
+    Statistics for borrow drations from known years only:
+
+    - mean: {mean_knownyear_durations:.1f}
+    - max: {max_knownyear_durations:.1f}
+
+    Mean/max across all calculable durations:
+
+    - mean: {mean_all_durations:.1f}
+    - max: {max_all_durations:.1f}
+    """)
     return
 
 
