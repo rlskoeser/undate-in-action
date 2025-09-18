@@ -2,8 +2,8 @@
 % *Anthology of Computers and the Humanities*. ADD THE OPTION
 % 'final' WHEN CREATING THE FINAL VERSION OF THE PAPER. 
 % DO NOT change the documentclass
-%\documentclass[final]{anthology-ch} % for the final version
-\documentclass{anthology-ch}         % for the submission
+\documentclass[final]{anthology-ch} % for the final version
+%\documentclass{anthology-ch}         % for the submission
 
 % LOAD LaTeX PACKAGES
 \usepackage{booktabs}
@@ -57,12 +57,12 @@
 \maketitle
 
 \begin{abstract}
-This paper provides an introduction to the \texttt{undate} python library with an emphasis on demonstrating supported functionality with some example use cases from specific projects. \texttt{undate} is designed for working with uncertain and partially known dates, and also includes support for dates in multiple calendars and with mixed precision. This paper provides an overview of the basic functionality with comparison to the Python built-in \texttt{datetime.date}, demonstrating support for missing and partially known values. Use cases and data from \textit{Princeton Geniza Project} and \textit{Shakespeare and Company Project} are used to further demonstrate the value and practical application of \texttt{undate} for parsing and comparing mixed precision dates in multiple calendars, and for calculating and plotting durations for events with known days but unknown years. This paper was originally presented as a "tool presentation" at the Digital Humanities Tech Symposium at DH2025.
+This paper provides an introduction to the \texttt{undate} python library with an emphasis on demonstrating supported functionality with some example use cases from specific projects. \texttt{undate} is designed for working with uncertain and partially known dates, and also includes support for dates in multiple calendars and with mixed precision. This paper provides an overview of the basic functionality with comparison to the Python built-in \texttt{datetime.date}, demonstrating support for missing and partially known values. Use cases and data from \textit{Princeton Geniza Project} and \textit{Shakespeare and Company Project} are used to further demonstrate the value and practical application of \texttt{undate} for parsing and comparing mixed precision dates in multiple calendars, and for calculating and plotting durations for events with known days but unknown years. This paper was originally presented as a "tool presentation" at the Digital Humanities Tech Symposium at DH2025.\footnote{An interactive version of the tool presentation is available online in the form of a Marimo notebook at https://rlskoeser.github.io/undate-in-action/}
 \end{abstract}
 
 \section{Introduction} 
 
-\texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_2025}. It is "an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats" \cite{koeser_princeton_2025}. The software is available on GitHub\footnote{https://github.com/dh-tech/undate-python/}. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects.
+\texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_python_2025}. It is "an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats" \cite{koeser_undate_2025}. The software is freely available on GitHub\footnote{https://github.com/dh-tech/undate-python/} and published under an open source software license. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects.
 
 \begin{figure}[h]
   \centering
@@ -71,7 +71,7 @@ This paper provides an introduction to the \texttt{undate} python library with a
   \label{fig:logo}
 \end{figure}
 
-For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.\footnote{An interactive version of this tool presentation is available online in the form of a Marimo notebook at https://rlskoeser.github.io/undate-in-action/}
+For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.
 
 \subsection{How is \texttt{Undate} like \texttt{datetime.date} ?} \label{sec:intro_details}
 
@@ -89,7 +89,7 @@ year, month, day = 2000, 11, 7
 dt_november7 = datetime.date(year, month, day)
 november7 = Undate(year, month, day)
 
-assert november7 == dt_november
+assert november7 == dt_november7
 \end{minted}
 
 
@@ -137,7 +137,7 @@ for example_date in [
     november7,
     easter1916,
 ]:
-print(f"""{example_date.label} {example_date}
+    print(f"""{example_date.label} {example_date}
 - Date precision: {example_date.precision}
 - Duration in days: {example_date.duration().days}""")
 \end{minted}
@@ -201,7 +201,7 @@ for example_date in [someyear_1900s, late2022]:
     print(f"""{example_date.label} {example_date}
 - Date precision: {example_date.precision}
 - Duration in days: {max(example_date.duration().days)}
-)
+""")
 \end{minted}
 
 \paragraph{1900s} \texttt{19XX}
@@ -244,7 +244,7 @@ print(f"""{someyear_1900s.label} {someyear_1900s}
 {late2022.label} {late2022}
 - duration: {late2022.duration()}
 - duration in days: {late2022.duration().days}
-"""
+""")
 \end{minted}
 
 \paragraph{1900s} \texttt{19XX}
@@ -264,15 +264,11 @@ Even without precise information, we can still do some useful comparisons. Febru
 
 \begin{minted}{python}
 some_february = Undate(month=2, label="February of some year")
-assert some_february.duration() < late2022.duration()
-
 # February of an unknown year is shorter than 
 # an uncertain month 1X (October, November, or December) 
-some_february.duration() < late2022.duration() = True
-
 assert some_february.duration() < late2022.duration()
 
-print(f"""### {some_february.label} {some_february}
+print(f"""{some_february.label} {some_february}
 - duration: {some_february.duration()}
 - duration in days: {some_february.duration().days}
 """)
@@ -445,9 +441,8 @@ This paper provides a demonstration of some of the current functionality of the 
 
 
 
-%\section*{Acknowledgements}
-%
-%This unnumbered section should be blank when submitting your paper. After review, you may include lists of people and organizations who supported the work.
+\section*{Acknowledgements}
+Thanks to David Ragnar Nelson, who caught and corrected several small errors in the code examples during review. 
 
 % Print the biblography at the end. Keep this line after the main text of your paper, and before an appendix. 
 \printbibliography
@@ -624,7 +619,7 @@ We load the full events data from the Shakespeare and Company published datasets
 Finally, we define and use a method to generate a raincloud plot, showing the distribution of borrow durations in two different ways, and color the rain drops in the lower portion of the plot to highlight the durations based on borrow events with unknown years. (The raincloud plot is adapted from prior work in \cite{koeser_missing_2024}.)
 
 \begin{minted}{python}
-
+import altair as alt
 
 from undate import UndateInterval
 from undate.date import ONE_DAY, UnInt
