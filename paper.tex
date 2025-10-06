@@ -15,6 +15,7 @@
 \definecolor{LightGray}{gray}{0.95}
 \setminted[python]{bgcolor=LightGray}
 \usepackage{relsize}
+% show all author names in references
 
 % TITLE OF THE SUBMISSION
 % Change this to the name of your submission
@@ -35,7 +36,7 @@
 % KEYWORDS
 % Provide one or more keywords or key phrases seperated by commas
 % using the following command
-\keywords{dates, calendars, partial information, software, digital humanities, python}
+\keywords{dates, calendars, partial information, missing data, software, digital humanities, python}
 
 % METADATA FOR THE PUBLICATION
 % This will be filled in when the document is published; the values can
@@ -57,12 +58,12 @@
 \maketitle
 
 \begin{abstract}
-This paper provides an introduction to the \texttt{undate} python library with an emphasis on demonstrating supported functionality with some example use cases from specific projects. \texttt{undate} is designed for working with uncertain and partially known dates, and also includes support for dates in multiple calendars and with mixed precision. This paper provides an overview of the basic functionality with comparison to the Python built-in \texttt{datetime.date}, demonstrating support for missing and partially known values. Use cases and data from \textit{Princeton Geniza Project} and \textit{Shakespeare and Company Project} are used to further demonstrate the value and practical application of \texttt{undate} for parsing and comparing mixed precision dates in multiple calendars, and for calculating and plotting durations for events with known days but unknown years. This paper was originally presented as a "tool presentation" at the Digital Humanities Tech Symposium at DH2025.\footnote{An interactive version of the tool presentation is available online in the form of a Marimo notebook at https://rlskoeser.github.io/undate-in-action/}
+This paper provides an introduction to the \texttt{undate} python library with an emphasis on demonstrating supported functionality with some example use cases from specific projects. \texttt{undate} is designed for working with uncertain and partially known dates, and also includes support for dates in multiple calendars and with mixed precision. This paper provides an overview of the basic functionality with comparison to the Python built-in \texttt{datetime.date}, demonstrating support for missing and partially known values. Use cases and data from \textit{Princeton Geniza Project} and \textit{Shakespeare and Company Project} are used to further demonstrate the value and practical application of \texttt{undate} for parsing and comparing mixed precision dates in multiple calendars, and for calculating and plotting durations for events with known days but unknown years. This paper was originally presented as a ``tool presentation'' at the Digital Humanities Tech Symposium at DH2025.\footnote{An interactive version of the tool presentation is available online in the form of a Marimo notebook at \href{https://rlskoeser.github.io/undate-in-action/}{https://rlskoeser.github.io/undate-in-action/}}
 \end{abstract}
 
 \section{Introduction} 
 
-\texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_python_2025}. It is "an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats" \cite{koeser_undate_2025}. The software is freely available on GitHub\footnote{https://github.com/dh-tech/undate-python/} and published under an open source software license. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects.
+\texttt{undate} is a python library for working with uncertain or partially known dates, with support for multiple calendars \cite{koeser_undate_python_2025}. It is ``an ambitious in-progress effort to develop a pragmatic Python package for the computation and analysis of temporal information in humanistic and cultural data, with a particular emphasis on uncertain, incomplete or imprecise dates and with support for multiple calendaring systems and date formats'' \cite{koeser_undate_2025}. The software is freely available on GitHub\footnote{https://github.com/dh-tech/undate-python/} and published under an open source software license. This project was originally started at a DHTech Hackathon \cite{koeser_join_2023}, and builds on experiences from other digital humanities projects. The ultimate goal is to build an active community of people that are using and maintaining the project, and developing it further.
 
 \begin{figure}[h]
   \centering
@@ -71,12 +72,13 @@ This paper provides an introduction to the \texttt{undate} python library with a
   \label{fig:logo}
 \end{figure}
 
-For an in depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, refer to the software paper "Undate: humanistic dates for computation" \cite{koeser_princeton_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.
+For an in-depth understanding of the context, goals, humanities and software development methodologies that inform the project, and a comparison with related software, I encourage you to read the software paper ``Undate: humanistic dates for computation'' \cite{koeser_undate_2025}.  The logo (Figure \ref{fig:logo}) was designed as a reminder of the competing needs for nuanced human-readable information and computationally tractable data.
 
 \subsection{How is \texttt{Undate} like \texttt{datetime.date} ?} \label{sec:intro_details}
 
+Before describing \texttt{undate}’s functionality for handling uncertain dates, first, as a point of reference,  I demonstrate how it compares with the standard Python \texttt{datetime.date} implementation.
 
-Both can be initialized by specifying numeric values for year, month, and day. Both can be printed using the default serialization (ISO8601, or YYYY-MM-DD), and we can compare them.
+Both an \texttt{undate.Undate} and a \texttt{datetime.date} can be initialized by specifying numeric values for year, month, and day. Both can be printed using the default serialization (ISO8601, or YYYY-MM-DD). \texttt{undate} is compatible with \texttt{datetime.date}, so we can also can compare these two objects. This means that \texttt{undate} can be easily used instead of or in conjunction with \texttt{datetime.date}.
 
 \begin{minted}{python}
 import datetime
@@ -95,7 +97,7 @@ assert november7 == dt_november7
 
 \subsection{How is \texttt{Undate} \textit{not} like \texttt{datetime.date}?}
 
-An \texttt{Undate} can be initialized with partial information.  \texttt{Undate} can also take an optional label, since sometimes it's useful to name a date.  It can be initialized with year and month, just year, or even month and day with no year.
+However, there are some key differences between the packages. An \texttt{Undate} can be initialized with partial information.  \texttt{Undate} can also take an optional label, since sometimes it's useful to name a date.  It can be initialized with year and month, just year, or even month and day with no year.
 
 \begin{minted}{python}
 # November 2000
@@ -110,9 +112,7 @@ november7.label = "November 7, 2000"
 easter1916 = Undate(1916, 4, 23, label="Easter 1916")
 \end{minted}
 
-
-If you try to do that with \texttt{datetime.date}, you get a
-\texttt{TypeError} because all three fields are required.
+If you try to do that with \texttt{datetime.date}, you get a \texttt{TypeError} because all three fields are required.
 
 \begin{minted}{python}
 try:
@@ -123,11 +123,7 @@ except TypeError as err:
 "function missing required argument 'day' (pos 3)"
 \end{minted}
 
-
-Each of these \texttt{Undate} objects can be printed out in a standard
-format; the \texttt{Undate} class also tracks how precisely a date is
-specified, and can calculate the duration.  If we iterate over the
-example partially-known dates initialized in the code block above and print label, formatted date, precision, and duration in days, we get output like this (here and throughout, formatting added for readability):
+Each of these \texttt{Undate} objects can be printed out in a standard format; the \texttt{Undate} class also tracks how precisely a date is specified, and can calculate the duration.  If we iterate over the example partially-known dates initialized in the code block above and print label, formatted date, precision, and duration in days, we get output like this (here and throughout, formatting has been added for readability):
 
 \begin{minted}{python}
 for example_date in [
@@ -184,14 +180,11 @@ assert november7_some_year not in year2k  # --11-07 not in 2000
 
 \subsection{Partially known values}
 
-In the last set of examples, the values used to initialize \texttt{Undate} instances were all integers and parts of the date were either known or unknown. But what if you know part of a
-date?
+In the last set of examples, the values used to initialize \texttt{Undate} instances were all integers and parts of the date were either known or unknown. But what if you know part of a date?
 
-You can initialize \texttt{Undate} with strings and use \texttt{X} to
-indicate unknown values.  (We chose \texttt{X} based on the \href{https://www.loc.gov/standards/datetime/}{Extended Date Time Format (EDTF)} specification).
+You can initialize \texttt{Undate} with strings and use\textbf{ \texttt{X}} to indicate unknown values.  (We chose \texttt{X} based on the \href{https://www.loc.gov/standards/datetime/}{Extended Date Time Format (EDTF)} specification).
 
-Here we initialize two dates with partially known information, where a year or month cannot be precisely pinned down but some information is known. As before, we can iterate over these dates
-and output label, formatted date, precision, and duration:
+Here we initialize two dates with partially known information, where a year or month cannot be precisely pinned down but some information is known. As before, we can iterate over these dates and output label, formatted date, precision, and duration:
 
 \begin{minted}{python}
 someyear_1900s = Undate("19XX", label="1900s")
@@ -216,8 +209,7 @@ for example_date in [someyear_1900s, late2022]:
     \item Duration in days: 31
 \end{itemize}    
 
-    
-If you try that with \texttt{datetime.date} you get another \texttt{TypeError}.    
+If you to initialize a \texttt{datetime.date} object like this, you get another \texttt{TypeError}.    
 
 \begin{minted}{python}
 try:
@@ -230,11 +222,9 @@ except TypeError as err:
 
 \subsection{Uncertain durations}
 
-If you were paying close attention, you may have noticed I used the
-\texttt{max()} function in the code block above where I output the duration for the partially known dates.
+If you were paying close attention, you may have noticed I used the \texttt{max()} function in the code block above where I output the duration for the partially known dates.
 
-The most recent version of \texttt{undate} (version 0.5) includes experimental support for 
-uncertain time deltas.
+The most recent version of \texttt{undate} (version 0.5) includes experimental support for uncertain time deltas.  This is just one aspect of support for working with dates and date ranges in terms of duration.  The \texttt{undate} package also includes an \texttt{UndateInterval} class, with first-class support for date ranges between two uncertain dates, or an open interval starting or ending with an \texttt{Undate}. For reasons of space, I don't discuss the interval functionality in this paper.
 
 \begin{minted}{python}
 print(f"""{someyear_1900s.label} {someyear_1900s}
@@ -259,7 +249,6 @@ print(f"""{someyear_1900s.label} {someyear_1900s}
     \item duration in days: \texttt{UnInt(lower=30, upper=31)}
 \end{itemize}
     
-    
 Even without precise information, we can still do some useful comparisons. February of an unknown year is still shorter than October, November, or December.
 
 \begin{minted}{python}
@@ -275,25 +264,20 @@ print(f"""{some_february.label} {some_february}
 
 \end{minted}
 
-\paragraph{February of some year} \texttt{-}{-02}
+\paragraph{February of some year} \texttt{{-}{-02}}
 \begin{itemize}
     \item duration: \texttt{UnDelta(days=[28,29])}
     \item duration in days: \texttt{UnInt(lower=28, upper=29)}
 \end{itemize}
     
 \section{Example use cases from specific projects}\label{example-use-cases-from-specific-projects}
-
-\texttt{undate} is informed by work from existing digital humanities projects, and has been developed with the goal of generalizing custom solutions into a reusable library to benefit the whole community. In particular, "\texttt{undate} draws on a partial date implementation from the \textit{Shakespeare and Company Project} and calendar conversion and mixed
-precision dates in the \textit{Princeton Geniza Project} (PGP). Calendar
-logic and representation is additionally informed by work on
-the \textit{Islamic Scientific Manuscripts Initiative} (ISMI)" \cite{koeser_princeton_2025}.
+\texttt{undate} is informed by work from existing digital humanities projects, and has been developed with the goal of generalizing custom solutions into a reusable library to benefit the whole community. In particular, ``\texttt{undate} draws on a partial date implementation from the \textit{Shakespeare and Company Project} and calendar conversion and mixed precision dates in the \textit{Princeton Geniza Project} (PGP). Calendar logic and representation is additionally informed by work on the \textit{Islamic Scientific Manuscripts Initiative} (ISMI)'' \cite{koeser_undate_2025}.
 
 \subsection{Princeton Geniza Project}\label{princeton-geniza-project}
 
-The \href{https://geniza.princeton.edu/}{\textit{Princeton Geniza Project}} (PGP) is
-a long-running project focused on materials from a synagogue in Cairo; these contents are
-primarily medieval, and largely written in Hebrew script. Because they are older and fragmentary, many of them cannot be dated;  those documents that do have dates use a variety of calendars — the Hebrew \textit{Anno Mundi} and Seleucid calendars, as well as the
-Islamic \textit{Hijri} calendar.  This project is one of the precursors that fed into the development of \texttt{undate}, due to the need to support multiple calendars, mixed precision, and various kinds of temporal uncertainty \cite{rustow_dating_2020}. Here, we use published PGP data \cite{rustow_princeton_2025} to demonstrate \texttt{undate} calendar parsing and conversion functionality. 
+The \href{https://geniza.princeton.edu/}{\textit{Princeton Geniza Project}} (PGP) is a long-running project focused on materials from a synagogue in Cairo; these contents are primarily medieval, and largely written in Hebrew script. Because they are older and fragmentary, many of them cannot be dated;  those documents that do have dates use a variety of calendars — the Hebrew \textit{Anno Mundi} and Seleucid calendars, as well as the Islamic \textit{Hijri} calendar. The Hebrew calendar is a lunisolar calendar and the Islamic calendar is a lunar calendar, so they don’t map neatly to the months and years of the Gregorian calendar.
+
+This PGP is one of the precursors that fed into the development of \texttt{undate}, due to this need to support storing, filtering, and searching dates from multiple calendars, with mixed precision, and various kinds of temporal uncertainty \cite{rustow_dating_2020}. Here, I use data from the published PGP datasets \cite{rustow_princeton_2025} to demonstrate \texttt{undate} calendar parsing and conversion functionality. 
 
 An \texttt{Undate} instance preserves any initial values for year, month, and day in the original calendar. As you see in Table \ref{tab:pgp-parsed-dates}, the ISO format \texttt{Undate} corresponds to the original date rather than the standardized date.
 
@@ -323,7 +307,7 @@ Shawwāl 425 & Hijrī & 1034-08-29/1034-09-07 & 0425-10 & month &  \\
 
 Under the hood, \texttt{undate} calculates the earliest and latest possible dates in range for comparison and sorting. When an \texttt{Undate} object is initialized with a different calendar, the earliest and latest dates are based on conversion to the Gregorian calendar so that dates can be compared and used together across calendars. (The the code used to parse the PGP document dates displayed in this example is available in Appendix \ref{appdx:parse-pgp-dates}). When working across calendars, dates with the same precision (year, month) often have different durations in days.
 
-An \texttt{Undate} object is aware of date precision, which means that in a dataset with mixed precision dates like PGP, once dates are parsed we can easily see the variation in the data (Table \ref{tab:pgp-date-precisions}).\footnote{With the caveat that in this case the results are somewhat skewed by the dates we're able to parse; PGP data includes modifiers not yet supported by \texttt{undate}, which were ignored during parsing.}
+An \texttt{Undate} object is aware of date precision, which means that in a dataset with mixed precision dates like PGP, once dates are parsed we can easily see the variation in the data (Table \ref{tab:pgp-date-precisions}).\footnote{With the caveat that in this case the results are somewhat skewed by the dates that can easily be parsed; PGP data includes modifiers not yet supported by \texttt{undate}, which were ignored during parsing.}
 
 \begin{table}[h]
   \centering 
@@ -372,7 +356,7 @@ Safar 1248 & Hijrī & 1248-02 & 1832-06-30 & 1832-07-28 & month & 29 \\
 %% should any of these be UnInt? might be a bug in undate...
 
 
-Preserving available details in mixed precision dates offers new opportunities for analysis; for instance, we can analyze weekday frequency by document type (Figure \ref{fig:pgp-weekday-frequency} ). In the PGP data, Legal documents and letters are the types of documents most likely to have a clear date. When visualized with a heatmap, the results match our expectations: Saturday is light for both types, because it is the Hebrew Shabbat, a day of rest. Monday and Thursday are the traditional convening days for court sessions, which is reflected in the preponderance of Legal documents on those days.\footnote{Analysis and visualization adapted from prior work. \cite{koeser_princeton_2025}}
+Preserving available details in mixed precision dates offers new opportunities for analysis; for instance, we can analyze weekday frequency by document type (Figure \ref{fig:pgp-weekday-frequency} ). In the PGP data, Legal documents and letters are the types of documents most likely to have a clear date. When visualized with a heatmap, the results match our expectations: Saturday is light for both types, because it is the Hebrew Shabbat, a day of rest. Monday and Thursday are the traditional convening days for court sessions, which is reflected in the preponderance of Legal documents on those days.\footnote{Analysis and visualization adapted from prior work. \cite{koeser_undate_2025}}
 
 \begin{figure}[h]
   \centering
@@ -422,7 +406,7 @@ an implementation to support incomplete dates written on handwritten cards \cite
 
 This project includes borrowing events with unknown years; with
 \texttt{undate} we can calculate how long a book was borrowed even when
-we don't know the exact year. We use Gertrude Stein as an example here, since she is a well known figure with documented borrowing activity without known years (Figure \ref{fig:stein-lending-card}), although she is far from the only one\footnote{Stein is famous enough that these unknowns could perhaps be resolved through research; that is not the case for the lesser known members of this library.}. Stein has 46 borrow events with calculable duration; of those 7, or 15\% have no known year.  If we limit our analysis to borrow events with known years, we arrive at an average borrow length of 32 days and a maximum of 91 days. However, when we include events with unknown years we get an average of 38 and a maximum of 126 days.
+we don't know the exact year. We use Gertrude Stein as an example here, since she is a well known figure with documented borrowing activity without known years (Figure \ref{fig:stein-lending-card}), although she is far from the only one.\footnote{Stein is famous enough that these unknowns could perhaps be resolved through research; that is not the case for the lesser known members of this library.} Stein has 46 borrow events with calculable duration; of those 7, or 15\%, have no known year.  If we limit our analysis to borrow events with known years, we arrive at an average borrow length of 32 days and a maximum of 91 days. However, when we include events with unknown years we get an average of 38 and a maximum of 126 days. In the context of this project, we calculate the duration of borrow events with unknown years as the shortest possible duration between the start and end date; that is, the the dates are in the same year (or following year, when the end date is an earlier month than the start date). This is based on our assumption that the clerks working in the book shop would have noted the year if the book was out for a longer time period, as they did in other cases.
 
 The full code used to calculate durations and plot them is available in Appendix \ref{appdx:shxco-duration-raincloud}.  Here we show a sample of the parsed borrow events (Table \ref{tab:stein-borrowing}) and a raincloud plot of Stein's borrowing (Figure \ref{fig:stein-borrow-raincloud}) to demonstrate the value of including partial information in our analysis. 
 
@@ -431,18 +415,17 @@ The full code used to calculate durations and plot them is available in Appendix
   \centering
   \includegraphics[width=\linewidth]{assets/shxco_stein_borrows.pdf}
   \caption{Raincloud plot showing how long Gertrude Stein typically kept the books
-she borrowed.  Borrows with unknown years are highlighted in orange in the lower portion (the "rain") of the plot. }
+she borrowed.  Borrows with unknown years are highlighted in orange in the lower portion (the ``rain'') of the plot. }
   \label{fig:stein-borrow-raincloud}
 \end{figure}
 
 \section{Conclusion}
 
-This paper provides a demonstration of some of the current functionality of the \texttt{undate} python library, although it is certainly not exhaustive. We have barely touched on intervals and some fo the calculations and logic around uncertainty that are currently supported. This package is still in active development, with tremendous potential in multiple directions. We plan to continue adding support for more calendars and formats (e.g., RDF and CIDOC-CRM), and improve the support for ambiguity and granularity in parsing and date precisions.  Another avenue of interest is representing the temporal uncertainty in data visualizations based on \texttt{undate} parsing and analysis \cite{yau_visualizing_2018}. Development on \texttt{undate} input and use cases from the community to steer and prioritize the work, to ensure that work is interpretable and usable in the context of a specific project while still being general enough to be usable and accurate across disparate projects. 
-
+This paper provides a demonstration of some of the current functionality of the \texttt{undate} python library, although it is certainly not exhaustive. I have barely touched on intervals and some of the calculations and logic around uncertainty that are currently supported. This package is still in active development, with tremendous potential in multiple directions. I and my collaborators plan to continue adding support for more calendars and formats (e.g., RDF and CIDOC-CRM), and improve the support for ambiguity and granularity in parsing and date precisions.  Other avenues of interest are representing the temporal uncertainty in data visualizations based on \texttt{undate} parsing and analysis \cite{yau_visualizing_2018}, or making more use of labels for analysis. Development on \texttt{undate} input and use cases from the community to steer and prioritize the work, to ensure that work is interpretable and usable in the context of a specific project while still being general enough to be usable and accurate across disparate projects.  As \texttt{undate} matures, I hope to start seeing it used in more projects, and we would love to know if there is an interest or need in adapting it to other programming languages or extending int for specific ecosystems and frameworks.
 
 
 \section*{Acknowledgements}
-Thanks to David Ragnar Nelson, who caught and corrected several small errors in the code examples during review. 
+This work is supported by the Center for Digital Humanities at Princeton University.  Thanks to my reviewers, especially: David Ragnar Nelson, who caught and corrected several errors in the code examples introduced in the conversion from notebook to paper; and Julia Damerow, for suggestions to improve the flow.
 
 % Print the biblography at the end. Keep this line after the main text of your paper, and before an appendix. 
 \printbibliography
