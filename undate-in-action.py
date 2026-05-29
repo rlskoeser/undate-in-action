@@ -31,7 +31,7 @@ def _(mo):
 
 
 @app.cell
-async def _():
+async def _(NOTEBOOK_PUBLIC_DIR):
     import sys
 
     # when running under WASM, use micropip to install necessary dependencies
@@ -40,9 +40,8 @@ async def _():
 
         await micropip.install("polars")
         # PyMeeus is a dependency of convertdate; for some reason micropip can't install it automatically
-        await micropip.install(
-            "https://www.piwheels.org/simple/pymeeus/PyMeeus-0.5.12-py3-none-any.whl#sha256=3fb4b35e1efa77bcde9c858f5749f2eb0b315a53caba7825d25b89cf24c1b47f"
-        )
+        # install a local copy since CORs prevents installing from https://www.piwheels.org/simple/pymeeus/
+        await micropip.install(NOTEBOOK_PUBLIC_DIR / "assets" / "deps" / "PyMeeus-0.5.12-py3-none-any.whl")
         await micropip.install("undate")
     return
 
@@ -80,9 +79,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""We can print both of them in ISO8601 format (YYYY-MM-DD) and we can compare them."""
-    )
+    mo.md(r"""We can print both of them in ISO8601 format (YYYY-MM-DD) and we can compare them.""")
     return
 
 
@@ -131,9 +128,7 @@ def _(Undate, day, month, november7, year):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """If you try to do that with `datetime.date`, you get a `TypeError` because all three fields are required."""
-    )
+    mo.md("""If you try to do that with `datetime.date`, you get a `TypeError` because all three fields are required.""")
     return
 
 
@@ -148,9 +143,7 @@ def _(datetime, month, year):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """Each of these `Undate` objects can be printed out in a standard format; the `Undate` class also tracks how precisely a date is specified, and can calculate the duration."""
-    )
+    mo.md("""Each of these `Undate` objects can be printed out in a standard format; the `Undate` class also tracks how precisely a date is specified, and can calculate the duration.""")
     return
 
 
@@ -177,9 +170,7 @@ def _(easter1916, mo, november, november7, november7_some_year, year2k):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        r"""We can also do some simple calculations, like checking whether one date falls within another date."""
-    )
+    mo.md(r"""We can also do some simple calculations, like checking whether one date falls within another date.""")
     return
 
 
@@ -604,9 +595,7 @@ def _():
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""Then we load the Project events data, filter to Gertrude Stein's borrow events, and limit to the set of fields relevant to this analysis."""
-    )
+    mo.md(r"""Then we load the Project events data, filter to Gertrude Stein's borrow events, and limit to the set of fields relevant to this analysis.""")
     return
 
 
