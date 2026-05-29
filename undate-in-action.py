@@ -34,16 +34,17 @@ async def _(mo):
 
     # when running under WASM, use micropip to install necessary dependencies
     if sys.platform == "emscripten":
+        # path to public directory relative to this notebook when running as html+wasm in docs directory
+        NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "public"
+
         import micropip
 
         await micropip.install("polars")
         # PyMeeus is a dependency of convertdate; for some reason micropip can't install it automatically
         # install a local copy since CORs prevents installing from https://www.piwheels.org/simple/pymeeus/
-        await micropip.install(NOTEBOOK_PUBLIC_DIR / "assets" / "deps" / "PyMeeus-0.5.12-py3-none-any.whl")
+        await micropip.install(str(NOTEBOOK_PUBLIC_DIR / "deps" / "PyMeeus-0.5.12-py3-none-any.whl"))
         await micropip.install("undate")
 
-        # path to public directory relative to this notebook when running as html+wasm in docs directory
-        NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "public"
     else:
         # path to public directory relative to this notebook when running in python at repository root
         NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "docs" / "public"
