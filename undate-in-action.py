@@ -8,9 +8,7 @@ app = marimo.App(width="medium", app_title="Undate in Action")
 def _():
     import marimo as mo
 
-    # path to public directory relative to this notebook
-    NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "public"
-    return NOTEBOOK_PUBLIC_DIR, mo
+    return (mo,)
 
 
 @app.cell(hide_code=True)
@@ -31,7 +29,7 @@ def _(mo):
 
 
 @app.cell
-async def _(NOTEBOOK_PUBLIC_DIR):
+async def _(mo):
     import sys
 
     # when running under WASM, use micropip to install necessary dependencies
@@ -43,7 +41,13 @@ async def _(NOTEBOOK_PUBLIC_DIR):
         # install a local copy since CORs prevents installing from https://www.piwheels.org/simple/pymeeus/
         await micropip.install(NOTEBOOK_PUBLIC_DIR / "assets" / "deps" / "PyMeeus-0.5.12-py3-none-any.whl")
         await micropip.install("undate")
-    return
+
+        # path to public directory relative to this notebook when running as html+wasm in docs directory
+        NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "public"
+    else:
+        # path to public directory relative to this notebook when running in python at repository root
+        NOTEBOOK_PUBLIC_DIR = mo.notebook_location() / "docs" / "public"
+    return (NOTEBOOK_PUBLIC_DIR,)
 
 
 @app.cell
